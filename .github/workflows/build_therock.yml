@@ -3,10 +3,10 @@ name: Build and Release TheRock for RX5500XT
 on:
   push:
     tags:
-      - 'v*'  # 当你为仓库打上形如 v1.0.0 的版本标签时触发编译并发布
+      - 'v*'
 
 permissions:
-  contents: write # 赋予流水线创建 Release 并上传文件的权限
+  contents: write
 
 jobs:
   build-and-release:
@@ -15,9 +15,8 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          submodules: 'recursive' # 确保拉取所有必要的子模块
+          submodules: 'recursive'
 
-      # 1. 安装官方要求的所有 Ubuntu 依赖
       - name: Install Ubuntu dependencies
         run: |
           sudo apt update
@@ -25,51 +24,42 @@ jobs:
                              automake libtool python3-venv python3-dev \
                              libegl1-mesa-dev texinfo bison flex curl make ccache
 
-      # 2. 编译并安装官方指定的固定版本 patchelf
       - name: Install pinned patchelf
         run: |
           sudo env INSTALL_PREFIX=/usr/local ./dockerfiles/install_pinned_patchelf.sh
 
-      # 3. 初始化 Python 虚拟环境并安装 Python 依赖
       - name: Setup Python Environment
         run: |
           python3 -m venv .venv
           source .venv/bin/activate
           pip install --upgrade pip
           pip install -r requirements.txt
-          # 提取下载源码和打补丁
           python3 ./build_tools/fetch_sources.py
 
-      # 4. 配置并编译 (针对 RX 5500 XT 核心修改)
-      - name: Configure and Build (Target: gfx1012)
+      - name: Configure and Build Target gfx1012
         run: |
           source .venv/bin/activate
           eval "$(./build_tools/setup_ccache.py)"
           
-          # 关键修改：将目标显卡全量编译参数替换为你的 RX 5500 XT 独占架构 gfx1012
-          cmake -B build -GNinja -DTHEROCK_AMDGPU_FAMILIES=gfx1012 \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+          cmake -B build -GNinja "-DTHEROCK_AMDGPU_FAMILIES=gfx1012" \
+            "-DCMAKE_C_COMPILER_LAUNCHER=ccache" \
+            "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache" \
             .
           
           cmake --build build
 
-      # 5. 执行项目单元测试（可选，若测试失败可加 # 注释掉）
       - name: Run Tests
         run: |
           source .venv/bin/activate
           ctest --test-dir build --output-on-failure || echo "Tests failed but continuing"
 
-      # 6. 收集编译生成的所有 whl 文件到统一目录
       - name: Collect Wheel Packages
         run: |
           mkdir -p release_artifacts
-          # 在编译和环境输出目录中搜寻生成的 python whl 包，并复制出来
           find build .venv -name "*.whl" -exec cp {} release_artifacts/ \;
-          echo "Found the following wheel packages:"
+          echo "Found the following wheel packages"
           ls -l release_artifacts/
 
-      # 7. 自动创建 GitHub Release 并发布所有的 .whl 轮子包
       - name: Create GitHub Release and Upload Whl Artifacts
         uses: softprops/action-gh-release@v2
         with:
