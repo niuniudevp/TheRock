@@ -40,12 +40,10 @@ jobs:
         run: |
           source .venv/bin/activate
           eval "$(./build_tools/setup_ccache.py)"
-          
           cmake -B build -GNinja "-DTHEROCK_AMDGPU_FAMILIES=gfx1012" \
             "-DCMAKE_C_COMPILER_LAUNCHER=ccache" \
             "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache" \
             .
-          
           cmake --build build
 
       - name: Run Tests
