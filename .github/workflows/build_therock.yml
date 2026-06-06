@@ -2,8 +2,10 @@ name: Build and Release TheRock for RX5500XT
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+          - main
+          - master
+  workflow_dispatch: # 这个非常关键，允许你在网页上点击按钮手动触发
 
 permissions:
   contents: write
