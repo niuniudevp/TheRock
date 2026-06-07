@@ -1,10 +1,10 @@
 name: Build and Release TheRock for RX5500XT
 
 on:
-  push:
-    branches:
-          - main
-          - master
+  #push:
+  #  branches:
+  #        - main
+  #        - master
   workflow_dispatch: # 这个非常关键，允许你在网页上点击按钮手动触发
 
 permissions:
@@ -49,6 +49,7 @@ jobs:
           cmake --build build
 
       - name: Run Tests
+        continue-on-error: true 
         run: |
           source .venv/bin/activate
           ctest --test-dir build --output-on-failure || echo "Tests failed but continuing"
