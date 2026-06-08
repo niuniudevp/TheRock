@@ -46,7 +46,7 @@ jobs:
             "-DCMAKE_C_COMPILER_LAUNCHER=ccache" \
             "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache" \
             .
-          cmake --build build
+          cmake --build build -- -j 2
 
       - name: Run Tests
         continue-on-error: true 
